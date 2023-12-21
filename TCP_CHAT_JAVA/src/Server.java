@@ -2,51 +2,41 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.List;
 
-public class Server implements Runnable {
-    private ArrayList <ConnectionHandler> connexions ;
-    @Override
-    public void run() {
+public class Server {
+    private final ServerSocket serverSocket;
+
+    public Server( ServerSocket serverSocket) {
+
+        this.serverSocket = serverSocket;
+
+    }
+
+    public void startServer() {
         try {
-            ServerSocket serverSocket = new ServerSocket(8000);
-            Socket client = serverSocket.accept();
-            ConnectionHandler handler =  new ConnectionHandler(client);
-            connexions.add(handler);
+            System.out.println("Server is running");
+
+            while (!serverSocket.isClosed()) {
+                Socket client = serverSocket.accept();
+                System.out.println("A new Client has connected");
+                ClientHandler clientHandler = new ClientHandler(client);
+                Thread thread = new Thread(clientHandler);
+                thread.start();
+            }
         } catch (IOException e) {
-            //TODO HANDEL ERROR
+            throw new RuntimeException(e);
         }
 
     }
-}
-
-class ConnectionHandler implements  Runnable {
-
-    private Socket client;
-    private BufferedReader in;
-    private PrintWriter out;
-
-    private String username ;
-
-    public ConnectionHandler ( Socket client) {
-        this.client = client;
+    public void closeServer() throws IOException {
+        if (serverSocket != null) {
+            serverSocket.close();
+        }
     }
 
-    @Override
-    public void run() {
-        try {
-            out = new PrintWriter(client.getOutputStream() ,true);
-            in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-            out.println("Please select a username");
-            username = in.readLine();
-            System.out.println(username + "is connected to server");
-
-
-        } catch (IOException e){
-
-            //TODO
-
-        }
-
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(3000);
+        Server server = new Server(serverSocket);
+        server.startServer();
     }
 }
